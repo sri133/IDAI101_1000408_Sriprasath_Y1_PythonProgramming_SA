@@ -1,9 +1,9 @@
 # IDAI101_1000408_Sriprasath_Y1_PythonProgramming_SA
-# 💊 Asclepius – MedTimer
+# Asclepius – MedTimer
 
 **Asclepius – MedTimer** is a personal medication adherence tracking application built with Python and Streamlit. It allows users to schedule medicines, track daily intake, visualize adherence scores, and generate detailed PDF reports for medical records.
 
-## 🚀 Features
+## Features
 
 * **User Authentication:** Secure Login and Sign-up system using SHA-256 password hashing.
 * **Medication Management:**
@@ -21,7 +21,7 @@
     * Generates a downloadable PDF report using `ReportLab`.
     * Tracks exact timing deviations (Early, Late, On Time) based on a 10-minute tolerance window.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Language:** Python 3.x
 * **Frontend/Framework:** [Streamlit](https://streamlit.io/)
@@ -29,14 +29,14 @@
 * **PDF Generation:** ReportLab
 * **Visualization:** Python Turtle Graphics (Standard Library)
 
-## 📋 Prerequisites
+## Prerequisites
 
 Ensure you have Python installed on your machine. You will need to install the following external libraries:
 
 * `streamlit`
 * `reportlab`
 
-## 📦 Installation
+## Installation
 
 1.  **Clone the repository** (or place `MedTimer.py` in a folder):
     ```bash
@@ -51,7 +51,7 @@ Ensure you have Python installed on your machine. You will need to install the f
     ```
     *(Note: `sqlite3`, `hashlib`, `turtle`, `threading`, and `datetime` are part of the Python standard library and do not need installation.)*
 
-## ▶️ Usage
+## Usage
 
 1.  **Run the Application:**
     Navigate to the project folder and run:
