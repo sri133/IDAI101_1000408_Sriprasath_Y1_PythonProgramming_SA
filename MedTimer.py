@@ -7,7 +7,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import tempfile
-import threading
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -75,6 +74,35 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+# ------------------ NEW ---------------------------
+# REMINDER TRACKING
+# --------------------------------------------------
+if "reminded_doses" not in st.session_state:
+    st.session_state.reminded_doses = set()
+
+# --------------------------------------------------
+# REMINDER ENGINE (NEW)
+# --------------------------------------------------
+def check_medicine_reminders():
+    now = datetime.now()
+    WINDOW_SECONDS = 60
+
+    for mi, med in enumerate(st.session_state.meds):
+        for di, dose in enumerate(med["doses"]):
+            reminder_id = f"{mi}_{di}"
+            dose_time = dose["datetime"]
+
+            if (
+                not dose["taken"]
+                and reminder_id not in st.session_state.reminded_doses
+                and abs((dose_time - now).total_seconds()) <= WINDOW_SECONDS
+            ):
+                st.toast(
+                    f"💊 Time to take {med['name']} ({dose_time.strftime('%H:%M')})",
+                    icon="⏰"
+                )
+                st.session_state.reminded_doses.add(reminder_id)
+
 # --------------------------------------------------
 # AUTH UI
 # --------------------------------------------------
@@ -127,47 +155,20 @@ if st.session_state.page == "Add Medicine":
 
     times_per_day = st.number_input(
         "Times per Day",
-        min_value=1,
-        max_value=5,
-        value=med["times_per_day"] if edit_mode else 1,
-        key="times_per_day"
+        1, 5,
+        value=med["times_per_day"] if edit_mode else 1
     )
 
     with st.form("medicine_form"):
-        name = st.text_input(
-            "Medicine Name",
-            value=med["name"] if edit_mode else ""
-        )
-
-        start_date = st.date_input(
-            "Start Date",
-            value=med["start"] if edit_mode else date.today()
-        )
-
-        days = st.number_input(
-            "Number of Days",
-            min_value=1,
-            max_value=365,
-            value=med["days"] if edit_mode else 5
-        )
+        name = st.text_input("Medicine Name", value=med["name"] if edit_mode else "")
+        start_date = st.date_input("Start Date", value=med["start"] if edit_mode else date.today())
+        days = st.number_input("Number of Days", 1, 365, value=med["days"] if edit_mode else 5)
 
         st.subheader("⏰ Dose Times")
-
         times = []
         for i in range(times_per_day):
-            default_time = (
-                med["times"][i]
-                if edit_mode and i < len(med["times"])
-                else time(9, 0)
-            )
-
-            t = st.time_input(
-                f"Time {i + 1}",
-                value=default_time,
-                step=60,
-                key=f"time_{i}"
-            )
-            times.append(t)
+            default = med["times"][i] if edit_mode and i < len(med["times"]) else time(9, 0)
+            times.append(st.time_input(f"Time {i+1}", default))
 
         if st.form_submit_button("Save Medicine"):
             doses = []
@@ -203,6 +204,9 @@ if st.session_state.page == "Add Medicine":
 if st.session_state.page == "Today's Checklist":
     st.title("📋 Today's Checklist")
     now = datetime.now()
+
+    # -------- NEW REMINDER CALL ----------
+    check_medicine_reminders()
 
     for mi, med in enumerate(st.session_state.meds):
         for di, dose in enumerate(med["doses"]):
@@ -245,22 +249,18 @@ if st.session_state.page == "Today's Checklist":
     st.progress(score)
     st.write(f"{score}%")
 
-    # --------------------------------------------------
-    # PDF GENERATION
-    # --------------------------------------------------
     if st.button("📄 Download Adherence Report (PDF)"):
         styles = getSampleStyleSheet()
-        elements = []
-
-        elements.append(Paragraph("<b>Medicine Adherence Report</b>", styles["Title"]))
-        elements.append(Paragraph(
-            f"Patient: {st.session_state.user} | Age: {st.session_state.age}<br/>Generated: {date.today()}",
-            styles["Normal"]
-        ))
+        elements = [
+            Paragraph("<b>Medicine Adherence Report</b>", styles["Title"]),
+            Paragraph(
+                f"Patient: {st.session_state.user} | Age: {st.session_state.age}<br/>Generated: {date.today()}",
+                styles["Normal"]
+            )
+        ]
 
         table_data = [["Date", "Day", "Medicine", "Scheduled", "Taken", "Status"]]
-
-        TOLERANCE = 10
+        TOL = 10
 
         for med in st.session_state.meds:
             for d in med["doses"]:
@@ -269,15 +269,10 @@ if st.session_state.page == "Today's Checklist":
 
                 if taken_time:
                     diff = (taken_time - sched).total_seconds() / 60
-                    if diff < -TOLERANCE:
-                        status = '<font color="orange">● Early</font>'
-                    elif diff > TOLERANCE:
-                        status = '<font color="red">● Late</font>'
-                    else:
-                        status = '<font color="green">● On Time</font>'
+                    status = "On Time" if abs(diff) <= TOL else "Late"
                     taken_str = taken_time.strftime("%H:%M")
                 else:
-                    status = '<font color="grey">● Not Taken</font>'
+                    status = "Not Taken"
                     taken_str = "-"
 
                 table_data.append([
@@ -286,7 +281,7 @@ if st.session_state.page == "Today's Checklist":
                     med["name"],
                     sched.strftime("%H:%M"),
                     taken_str,
-                    Paragraph(status, styles["Normal"])
+                    status
                 ])
 
         table = Table(table_data, repeatRows=1)
@@ -297,18 +292,21 @@ if st.session_state.page == "Today's Checklist":
         ]))
 
         elements.append(table)
-
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        doc = SimpleDocTemplate(tmp.name, pagesize=A4)
-        doc.build(elements)
+        SimpleDocTemplate(tmp.name, pagesize=A4).build(elements)
 
         with open(tmp.name, "rb") as f:
-            st.download_button(
-                "⬇️ Download PDF",
-                f,
-                file_name="medicine_adherence_report.pdf",
-                mime="application/pdf"
-            )
+            st.download_button("⬇️ Download PDF", f, "medicine_adherence_report.pdf")
+
+    # -------- AUTO REFRESH (NEW) ----------
+    st.markdown(
+        """
+        <script>
+        setTimeout(function(){ window.location.reload(); }, 60000);
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --------------------------------------------------
 # BOTTOM NAV
