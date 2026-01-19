@@ -7,7 +7,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import tempfile
-import turtle
 import threading
 
 # --------------------------------------------------
@@ -245,50 +244,6 @@ if st.session_state.page == "Today's Checklist":
     st.subheader("📊 Adherence Score")
     st.progress(score)
     st.write(f"{score}%")
-
-    # --------------------------------------------------
-    # TURTLE GRAPHIC: Tablet filling as per adherence score
-    # --------------------------------------------------
-    def draw_tablet(adherence_percent):
-        t = turtle.Turtle()
-        t.hideturtle()
-        t.speed(0)
-        
-        # Tablet outline
-        t.penup()
-        t.goto(-100, 0)
-        t.pendown()
-        t.color("black", "white")
-        t.begin_fill()
-        t.setheading(0)
-        t.forward(200)
-        t.circle(50, 180)
-        t.forward(200)
-        t.circle(50, 180)
-        t.end_fill()
-        
-        # Fill based on adherence
-        fill_width = 2 * adherence_percent  # 100% -> 200 width
-        t.penup()
-        t.goto(-100, -50)
-        t.pendown()
-        t.color("black")
-        if fill_width > 0:
-            t.begin_fill()
-            t.fillcolor("blue")
-            t.forward(fill_width)
-            t.left(90)
-            t.forward(100)
-            t.left(90)
-            t.forward(fill_width)
-            t.left(90)
-            t.forward(100)
-            t.end_fill()
-        turtle.done()
-
-    st.subheader("💊 Adherence Tablet Visualization")
-    # Run turtle in a separate thread so Streamlit doesn't freeze
-    threading.Thread(target=lambda: draw_tablet(score)).start()
 
     # --------------------------------------------------
     # PDF GENERATION
@@ -710,3 +665,4 @@ if c3.button("🚪 Logout"):
 ##    st.rerun()
 ##
 ##
+
