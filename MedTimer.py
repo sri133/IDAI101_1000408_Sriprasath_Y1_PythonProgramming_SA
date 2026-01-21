@@ -435,30 +435,35 @@ if st.session_state.page == "Today's Checklist":
     st.progress(score)
     st.write(f"{score}%")
 
-   # --------------------------------------------------
-    # PDF GENERATION (ENHANCED WITH COLORED STATUS)
+  # --------------------------------------------------
+    # PDF GENERATION (WITH TABLES AND COLOR CODING)
     # --------------------------------------------------
     if st.button(f"📄 {t('btn_pdf')}"):
         styles = getSampleStyleSheet()
-        # Custom style for colored status text inside the table
-        styles.add(styles["Normal"].clone("StatusStyle"))
+        # Custom style for the colored status text
+        status_style = styles["Normal"].clone("StatusStyle")
+        status_style.alignment = 1  # Center alignment
         
         elements = []
+
+        # Title and Header Info
         elements.append(Paragraph(f"<b>{t('title')} - Adherence Report</b>", styles["Title"]))
-        elements.append(Paragraph(f"Patient: {st.session_state.user} | Date: {date.today()}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Patient:</b> {st.session_state.user} | <b>Age:</b> {st.session_state.age}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Generated on:</b> {date.today().strftime('%d-%m-%Y')}", styles["Normal"]))
         elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
-        # Table Header
-        table_data = [["Date", "Medicine", "Scheduled", "Taken At", "Status"]]
+        # Table Header Row
+        # Columns: Date, Day, Medicine, Scheduled, Taken At, Status
+        table_data = [["Date", "Day", "Medicine", "Scheduled", "Taken At", "Status"]]
         
-        TOLERANCE = 10  # Minutes window for "on time"
+        TOLERANCE = 15  # 15-minute window for "on time"
 
         for med in st.session_state.meds:
             for d in med["doses"]:
                 sched_dt = d["datetime"]
                 taken_dt = d["taken_time"]
                 
-                # Determine Status and Color
+                # Logic for Color and Status Text
                 if d["taken"] and taken_dt:
                     diff = (taken_dt - sched_dt).total_seconds() / 60
                     taken_str = taken_dt.strftime("%H:%M")
@@ -468,44 +473,48 @@ if st.session_state.page == "Today's Checklist":
                         status_color = "green"
                     else:
                         status_text = "Taken early/late"
-                        status_color = "orange" # Using orange for better visibility than yellow on white PDF
+                        status_color = "#CCCC00"  # Darker Yellow/Gold for visibility
                 else:
                     status_text = "Not taken"
                     status_color = "red"
                     taken_str = "-"
 
-                # Create a colored Paragraph for the status cell
+                # Create a colored cell for the status
                 colored_status = Paragraph(
                     f'<b><font color="{status_color}">{status_text}</font></b>', 
-                    styles["StatusStyle"]
+                    status_style
                 )
 
                 table_data.append([
                     sched_dt.strftime("%d-%m-%Y"),
+                    sched_dt.strftime("%A"),
                     med["name"],
                     sched_dt.strftime("%H:%M"),
                     taken_str,
                     colored_status
                 ])
 
-        # Create Table Object
-        report_table = Table(table_data, colWidths=[80, 120, 80, 80, 120])
+        # Define Table and Widths
+        # Total A4 width is ~540 points
+        report_table = Table(table_data, colWidths=[75, 85, 90, 70, 70, 120])
         
-        # Apply Table Styling
+        # Apply Professional Table Styling (Grid, Background, Alignment)
         report_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.whitesmoke),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),  # Header background
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),       # THIS CREATES THE TABLES/COLUMNS
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, 0), 10),
         ]))
 
         elements.append(report_table)
 
-        # Build PDF
+        # Build and Save PDF
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         doc = SimpleDocTemplate(tmp.name, pagesize=A4)
         doc.build(elements)
@@ -514,7 +523,7 @@ if st.session_state.page == "Today's Checklist":
             st.download_button(
                 label=t("btn_download_pdf"),
                 data=f,
-                file_name=f"MedReport_{st.session_state.user}.pdf",
+                file_name=f"Medical_Report_{st.session_state.user}.pdf",
                 mime="application/pdf"
             )
 # --------------------------------------------------
@@ -568,6 +577,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
