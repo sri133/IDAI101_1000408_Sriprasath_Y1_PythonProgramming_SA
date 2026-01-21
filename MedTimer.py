@@ -134,28 +134,103 @@ for k, v in defaults.items():
 
 LANG_DATA = {
     "English": {
-        "title": "💊 Asclepius – MedTimer", "settings": "⚙️ Settings", "add_med": "➕ Add Medicine", 
-        "checklist": "📋 Today's Checklist", "logout": "🚪 Logout", "status_taken": "Taken", 
-        "status_now": "Time to Take", "status_missed": "Missed", "status_upcoming": "Upcoming", 
-        "save": "Save", "apply": "Apply Theme", "profile": "👤 Profile", "appearance": "🎨 Appearance", 
-        "lang_label": "Language", "age_label": "Age", "btn_taken": "Taken", "btn_edit": "Edit", 
-        "btn_del": "Delete", "adherence_score": "📊 Adherence Score", "btn_pdf": "Download Adherence Report (PDF)", 
-        "no_meds_today": "No medicines scheduled for today.", "btn_download_pdf": "⬇️ Download PDF"
+        "checklist": "📋 Today's Checklist", "settings": "⚙️ Settings", "add_med": "➕ Add Medicine",
+        "logout": "🚪 Logout", "profile": "👤 Profile", "appearance": "🎨 Appearance",
+        "save": "Save", "apply": "Apply", "status_taken": "Taken", "status_now": "Time to Take",
+        "status_missed": "Missed", "status_upcoming": "Upcoming", "btn_taken": "Taken",
+        "btn_edit": "Edit", "btn_del": "Delete", "no_meds_today": "No medicines today.",
+        "adherence_score": "📊 Adherence Score", "btn_pdf": "Download Report",
+        "lang_label": "Language", "age_label": "Age", "change_creds": "🔐 Change Credentials",
+        "curr_username": "Current Username", "curr_password": "Current Password",
+        "new_username": "New Username", "new_password": "New Password", "btn_update_auth": "Update Credentials",
+        "pdf_report_title": "Medication Adherence Report", "patient": "Patient", "generated": "Generated",
+        "col_date": "Date", "col_day": "Day", "col_med": "Medicine", "col_sched": "Scheduled", "col_taken": "Taken At", "col_status": "Status",
+        "btn_download_pdf": "⬇️ Download PDF"
     },
     "Tamil": {
-        "title": "💊 அஸ்க்லெபியஸ் – மெட்டடைமர்", "settings": "⚙️ அமைப்புகள்", "add_med": "➕ மருந்து சேர்க்க", 
-        "checklist": "📋 இன்றைய பட்டியல்", "logout": "🚪 வெளியேறு", "save": "சேமி", "apply": "தீம் மாற்றுக", 
-        "status_taken": "எடுத்துக்கொள்ளப்பட்டது", "status_now": "மருந்து எடுக்கும் நேரம்", "status_missed": "தவறியது", 
-        "status_upcoming": "வரவிருப்பது", "profile": "👤 சுயவிவரம்", "appearance": "🎨 தோற்றம்", 
-        "lang_label": "மொழி", "age_label": "வயது", "btn_taken": "எடுத்தேன்", "btn_edit": "திருத்து", 
-        "btn_del": "நீக்கு", "adherence_score": "📊 பின்பற்றுதல் மதிப்பெண்", "btn_pdf": "PDF அறிக்கை", 
-        "no_meds_today": "இன்று மருந்துகள் ஏதுமில்லை.", "btn_download_pdf": "⬇️ PDF பதிவிறக்கம்"
+        "checklist": "📋 இன்றைய பட்டியல்", "settings": "⚙️ அமைப்புகள்", "add_med": "➕ மருந்து சேர்க்க",
+        "logout": "🚪 வெளியேறு", "profile": "👤 சுயவிவரம்", "appearance": "🎨 தோற்றம்",
+        "save": "சேமி", "apply": "தீம் மாற்றுக", "status_taken": "எடுத்துக்கொள்ளப்பட்டது", "status_now": "மருந்து எடுக்கும் நேரம்",
+        "status_missed": "தவறியது", "status_upcoming": "வரவிருப்பது", "btn_taken": "எடுத்தேன்",
+        "btn_edit": "திருத்து", "btn_del": "நீக்கு", "no_meds_today": "இன்று மருந்துகள் ஏதுமில்லை.",
+        "adherence_score": "📊 பின்பற்றுதல் மதிப்பெண்", "btn_pdf": "PDF அறிக்கை",
+        "lang_label": "மொழி", "age_label": "வயது", "change_creds": "🔐 சான்றுகளை மாற்றவும்",
+        "curr_username": "தற்போதைய பயனர் பெயர்", "curr_password": "தற்போதைய கடவுச்சொல்",
+        "new_username": "புதிய பயனர் பெயர்", "new_password": "புதிய கடவுச்சொல்", "btn_update_auth": "சான்றுகளைப் புதுப்பிக்கவும்",
+        "pdf_report_title": "மருந்து பின்பற்றுதல் அறிக்கை", "patient": "நோயாளி", "generated": "உருவாக்கப்பட்டது",
+        "col_date": "தேதி", "col_day": "நாள்", "col_med": "மருந்து", "col_sched": "நேரம்", "col_taken": "எடுத்த நேரம்", "col_status": "நிலை",
+        "btn_download_pdf": "⬇️ PDF பதிவிறக்கம்"
     },
-    "Hindi": { "title": "💊 एस्लेपियस - मेडटाइमर", "settings": "⚙️ सेटिंग्स", "add_med": "➕ दवा जोड़ें", "checklist": "📋 आज की सूची", "logout": "🚪 लॉग आउट", "save": "सहेजें", "apply": "थीम लागू करें", "profile": "👤 प्रोफाइल", "appearance": "🎨 उपस्थिति", "lang_label": "भाषा", "age_label": "आयु" },
-    "Spanish": { "title": "💊 Asclepius", "settings": "⚙️ Ajustes", "add_med": "➕ Añadir", "checklist": "📋 Lista", "logout": "🚪 Salir", "save": "Guardar", "apply": "Aplicar" },
-    "French": { "title": "💊 Asclepius", "settings": "⚙️ Paramètres", "add_med": "➕ Ajouter", "checklist": "📋 Liste", "logout": "🚪 Déconnexion", "save": "Enregistrer", "apply": "Appliquer" },
-    "German": { "title": "💊 Asclepius", "settings": "⚙️ Einstellungen", "add_med": "➕ Hinzufügen", "checklist": "📋 Checkliste", "logout": "🚪 Abmelden", "save": "Speichern", "apply": "Anwenden" },
-    "Chinese": { "title": "💊 Asclepius", "settings": "⚙️ 设置", "add_med": "➕ 添加药物", "checklist": "📋 今日清单", "logout": "🚪 登出", "save": "保存", "apply": "应用主题" }
+    "Hindi": {
+        "checklist": "📋 आज की सूची", "settings": "⚙️ सेटिंग्स", "add_med": "➕ दवा जोड़ें",
+        "logout": "🚪 लॉग आउट", "profile": "👤 प्रोफाइल", "appearance": "🎨 उपस्थिति",
+        "save": "सहेजें", "apply": "थीम लागू करें", "status_taken": "लिया गया", "status_now": "दवा का समय",
+        "status_missed": "छूट गया", "status_upcoming": "आगामी", "btn_taken": "ले लिया",
+        "btn_edit": "संपादित करें", "btn_del": "हटाएं", "no_meds_today": "आज कोई दवा नहीं है।",
+        "adherence_score": "📊 अनुपालन स्कोर", "btn_pdf": "PDF रिपोर्ट",
+        "lang_label": "भाषा", "age_label": "आयु", "change_creds": "🔐 क्रेडेंशियल बदलें",
+        "curr_username": "वर्तमान उपयोगकर्ता नाम", "curr_password": "वर्तमान पासवर्ड",
+        "new_username": "नया उपयोगकर्ता नाम", "new_password": "नया पासवर्ड", "btn_update_auth": "क्रेडेंशियल अपडेट करें",
+        "pdf_report_title": "दवा अनुपालन रिपोर्ट", "patient": "रोगी", "generated": "जनरेट किया गया",
+        "col_date": "तारीख", "col_day": "दिन", "col_med": "दवा", "col_sched": "निर्धारित", "col_taken": "लिया गया समय", "col_status": "स्थिति",
+        "btn_download_pdf": "⬇️ PDF डाउनलोड करें"
+    },
+    "Spanish": {
+        "checklist": "📋 Lista de hoy", "settings": "⚙️ Ajustes", "add_med": "➕ Añadir medicina",
+        "logout": "🚪 Salir", "profile": "👤 Perfil", "appearance": "🎨 Apariencia",
+        "save": "Guardar", "apply": "Aplicar", "status_taken": "Tomado", "status_now": "Hora de tomar",
+        "status_missed": "Omitido", "status_upcoming": "Próximo", "btn_taken": "Tomado",
+        "btn_edit": "Editar", "btn_del": "Eliminar", "no_meds_today": "No hay medicinas para hoy.",
+        "adherence_score": "📊 Puntuación de adherencia", "btn_pdf": "Informe PDF",
+        "lang_label": "Idioma", "age_label": "Edad", "change_creds": "🔐 Cambiar credenciales",
+        "curr_username": "Usuario actual", "curr_password": "Password actual",
+        "new_username": "Nuevo usuario", "new_password": "Nuevo password", "btn_update_auth": "Actualizar datos",
+        "pdf_report_title": "Informe de adherencia médica", "patient": "Paciente", "generated": "Generado",
+        "col_date": "Fecha", "col_day": "Día", "col_med": "Medicina", "col_sched": "Programado", "col_taken": "Tomado a las", "col_status": "Estado",
+        "btn_download_pdf": "⬇️ Descargar PDF"
+    },
+    "French": {
+        "checklist": "📋 Liste du jour", "settings": "⚙️ Paramètres", "add_med": "➕ Ajouter médicament",
+        "logout": "🚪 Déconnexion", "profile": "👤 Profil", "appearance": "🎨 Apparence",
+        "save": "Enregistrer", "apply": "Appliquer", "status_taken": "Pris", "status_now": "C'est l'heure",
+        "status_missed": "Manqué", "status_upcoming": "À venir", "btn_taken": "Pris",
+        "btn_edit": "Modifier", "btn_del": "Supprimer", "no_meds_today": "Aucun médicament aujourd'hui.",
+        "adherence_score": "📊 Score d'adhésion", "btn_pdf": "Rapport PDF",
+        "lang_label": "Langue", "age_label": "Âge", "change_creds": "🔐 Changer identifiants",
+        "curr_username": "Nom d'utilisateur actuel", "curr_password": "Mot de passe actuel",
+        "new_username": "Nouveau nom", "new_password": "Nouveau mot de passe", "btn_update_auth": "Mettre à jour",
+        "pdf_report_title": "Rapport d'observance", "patient": "Patient", "generated": "Généré",
+        "col_date": "Date", "col_day": "Jour", "col_med": "Médicament", "col_sched": "Prévu", "col_taken": "Pris à", "col_status": "Statut",
+        "btn_download_pdf": "⬇️ Télécharger PDF"
+    },
+    "German": {
+        "checklist": "📋 Checkliste", "settings": "⚙️ Einstellungen", "add_med": "➕ Medizin hinzufügen",
+        "logout": "🚪 Abmelden", "profile": "👤 Profil", "appearance": "🎨 Aussehen",
+        "save": "Speichern", "apply": "Übernehmen", "status_taken": "Eingenommen", "status_now": "Zeit zur Einnahme",
+        "status_missed": "Verpasst", "status_upcoming": "Anstehend", "btn_taken": "Eingenommen",
+        "btn_edit": "Bearbeiten", "btn_del": "Löschen", "no_meds_today": "Keine Medikamente heute.",
+        "adherence_score": "📊 Therapietreue", "btn_pdf": "PDF Bericht",
+        "lang_label": "Sprache", "age_label": "Alter", "change_creds": "🔐 Zugangsdaten ändern",
+        "curr_username": "Benutzername", "curr_password": "Passwort",
+        "new_username": "Neuer Name", "new_password": "Neues Passwort", "btn_update_auth": "Aktualisieren",
+        "pdf_report_title": "Medikationsbericht", "patient": "Patient", "generated": "Erstellt",
+        "col_date": "Datum", "col_day": "Tag", "col_med": "Medikament", "col_sched": "Geplant", "col_taken": "Zeit", "col_status": "Status",
+        "btn_download_pdf": "⬇️ PDF Herunterladen"
+    },
+    "Chinese": {
+        "checklist": "📋 今日清单", "settings": "⚙️ 设置", "add_med": "➕ 添加药物",
+        "logout": "🚪 登出", "profile": "👤 个人资料", "appearance": "🎨 外观",
+        "save": "保存", "apply": "应用", "status_taken": "已服用", "status_now": "服药时间",
+        "status_missed": "错过", "status_upcoming": "即将到来", "btn_taken": "已服",
+        "btn_edit": "编辑", "btn_del": "删除", "no_meds_today": "今天没有药。",
+        "adherence_score": "📊 服药依从性", "btn_pdf": "PDF 报告",
+        "lang_label": "语言", "age_label": "年龄", "change_creds": "🔐 更改凭据",
+        "curr_username": "当前用户名", "curr_password": "当前密码",
+        "new_username": "新用户名", "new_password": "新密码", "btn_update_auth": "更新凭据",
+        "pdf_report_title": "服药依从性报告", "patient": "患者", "generated": "生成日期",
+        "col_date": "日期", "col_day": "星期", "col_med": "药物", "col_sched": "计划时间", "col_taken": "服用时间", "col_status": "状态",
+        "btn_download_pdf": "⬇️ 下载 PDF"
+    }
 }
 
 def t(key):
@@ -400,3 +475,4 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
