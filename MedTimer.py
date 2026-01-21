@@ -281,13 +281,27 @@ st.markdown(
 
 def check_medicine_reminders():
     now = datetime.now()
-    for mi, med in enumerate(st.session_state.meds):
-        for di, dose in enumerate(med["doses"]):
-            rid = f"{mi}_{di}"
-            if (not dose["taken"] and rid not in st.session_state.reminded_doses and 
-                abs((dose["datetime"] - now).total_seconds()) <= 60):
-                st.toast(f"💊 Time to take {med['name']} ({dose['datetime'].strftime('%H:%M')})", icon="⏰")
-                st.session_state.reminded_doses.add(rid)
+    # Initialize a tracking dictionary if it doesn't exist
+    if "notifications_done" not in st.session_state:
+        st.session_state.notifications_done = set()
+
+    for med in st.session_state.meds:
+        for dose in med["doses"]:
+            # Check if dose is for today and hasn't been taken
+            if dose["datetime"].date() == now.date() and not dose["taken"]:
+                
+                # Calculate time difference in minutes
+                # Positive means the time has passed; 0 means it's exactly now
+                time_diff = (now - dose["datetime"]).total_seconds() / 60
+                
+                # Create a unique key for this specific dose
+                notification_key = f"{med['name']}_{dose['datetime'].strftime('%H:%M')}"
+
+                # Trigger if we are within 1 minute of the scheduled time
+                if 0 <= time_diff < 1: 
+                    if notification_key not in st.session_state.notifications_done:
+                        st.toast(f"🔔 **Time for your medicine:** {med['name']}!", icon="💊")
+                        st.session_state.notifications_done.add(notification_key)
 
 # --------------------------------------------------
 # AUTH UI
@@ -379,6 +393,9 @@ if st.session_state.page == "Add Medicine":
 # --------------------------------------------------
 if st.session_state.page == "Today's Checklist":
     st.title(t("checklist"))
+    
+    # Check for notifications immediately when page loads/refreshes
+    check_medicine_reminders()
     
     # Ensure the quote exists in session state so it doesn't error out
     if "motivation_quote" not in st.session_state:
@@ -618,6 +635,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
