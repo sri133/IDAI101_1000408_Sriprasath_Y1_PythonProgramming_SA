@@ -379,6 +379,9 @@ if st.session_state.page == "Add Medicine":
 # --------------------------------------------------
 if st.session_state.page == "Today's Checklist":
     st.title(t("checklist"))
+    
+    # --- MOTIVATION BOX ---
+    st.info(f"✨ **Daily Motivation:** {st.session_state.motivation_quote}")
     now = datetime.now()
     check_medicine_reminders()
     to_delete = None
@@ -398,17 +401,39 @@ if st.session_state.page == "Today's Checklist":
                 else: st.warning(t("status_upcoming"))
 
                 c1, c2, c3 = st.columns(3)
-                if c1.button(f"✅ {t('btn_taken')}", key=f"take_{mi}_{di}"):
-                    dose["taken"] = True
-                    dose["taken_time"] = datetime.now()
-                    updated_json = json.dumps([{
-                        "datetime": d["datetime"].strftime("%Y-%m-%d %H:%M:%S"),
-                        "taken": d["taken"],
-                        "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d["taken_time"] else None
-                    } for d in med["doses"]])
-                    cur.execute("UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", (updated_json, st.session_state.user, med["name"]))
-                    conn.commit()
-                    st.rerun()
+                # --- INSIDE THE TAKEN BUTTON LOGIC ---
+if c1.button(f"✅ {t('btn_taken')}", key=f"take_{mi}_{di}"):
+    # 1. Update the dose state locally
+    dose["taken"] = True
+    dose["taken_time"] = datetime.now()
+    
+    # 2. --- NEW: Pick a random motivation quote ---
+    import random
+    MOTIVATION_QUOTES = [
+        "Excellent job! Your health is your wealth. 💪",
+        "Consistency is key! You're doing great. ✨",
+        "One step at a time, you're looking after yourself well! ❤️",
+        "Way to go! Keeping up with your health is a big win today. 🏆",
+        "You're doing a fantastic job staying on track! 🌈",
+        "Your future self will thank you for being so diligent. 💖",
+        "Keep it up! Small habits lead to big results. 🚀"
+    ]
+    st.session_state.motivation_quote = random.choice(MOTIVATION_QUOTES)
+    
+    # 3. Serialize all doses to save progress to Database
+    updated_json = json.dumps([{
+        "datetime": d["datetime"].strftime("%Y-%m-%d %H:%M:%S"),
+        "taken": d["taken"],
+        "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d["taken_time"] else None
+    } for d in med["doses"]])
+    
+    # 4. Database Update
+    cur.execute("UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", 
+               (updated_json, st.session_state.user, med["name"]))
+    conn.commit()
+    
+    # 5. Refresh the page to show the new quote and updated status
+    st.rerun()
 
                 if c2.button(f"✏️ {t('btn_edit')}", key=f"edit_{mi}_{di}"):
                     st.session_state.edit_med = mi
@@ -577,6 +602,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
