@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 import hashlib
 import json
+import os
 import tempfile
 from datetime import datetime, date, time, timedelta
 from reportlab.lib.pagesizes import A4
@@ -19,46 +20,58 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# DATABASE INITIALIZATION (CORRECTED)
+# DATABASE INITIALIZATION (AUTO-FILE CREATION)
 # --------------------------------------------------
 @st.cache_resource
 def get_db_connection():
-    # check_same_thread=False is used, but cache_resource ensures 
-    # we aren't creating a new connection on every script rerun.
-    return sqlite3.connect("users.db", check_same_thread=False)
+    # This force-creates the file 'users.db' in your current folder if it doesn't exist
+    db_path = os.path.join(os.getcwd(), "users.db")
+    
+    # timeout=20 prevents "Database is locked" errors
+    conn = sqlite3.connect(db_path, check_same_thread=False, timeout=20)
+    return conn
 
+# Connect and create the cursor
 conn = get_db_connection()
 cur = conn.cursor()
 
-# 1. Create tables if they don't exist
-cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, username TEXT UNIQUE, password_hash TEXT)")
+# Create Tables (This is where the file 'users.db' actually gets populated)
+try:
+    cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, username TEXT UNIQUE, password_hash TEXT)")
+    
+    cur.execute('''CREATE TABLE IF NOT EXISTS medicines (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT,
+                    med_name TEXT,
+                    start_date TEXT,
+                    days INTEGER,
+                    times TEXT,
+                    doses_json TEXT)''')
+    
+    cur.execute("CREATE TABLE IF NOT EXISTS user_settings (username TEXT PRIMARY KEY, language TEXT, bg_color TEXT, font_family TEXT, font_size INTEGER)")
+    
+    # This commit is what physically writes the tables to the 'users.db' file
+    conn.commit()
+except sqlite3.OperationalError as e:
+    st.error(f"Database Error: {e}")
+    st.stop()
 
-cur.execute('''CREATE TABLE IF NOT EXISTS medicines (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
-                med_name TEXT,
-                start_date TEXT,
-                days INTEGER,
-                times TEXT,
-                doses_json TEXT)''')
-
-cur.execute("CREATE TABLE IF NOT EXISTS user_settings (username TEXT PRIMARY KEY, language TEXT, bg_color TEXT, font_family TEXT, font_size INTEGER)")
-
-# 2. Helper for database migrations
+# --------------------------------------------------
+# MIGRATION HELPER
+# --------------------------------------------------
 def add_column_if_missing(table, column, definition):
     try:
         cur.execute(f"SELECT {column} FROM {table} LIMIT 1")
     except sqlite3.OperationalError:
-        # This error usually means the column doesn't exist
-        cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
-        conn.commit()
+        try:
+            cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            conn.commit()
+        except:
+            pass
 
-# Run the migration checks
+# Ensure new columns exist
 add_column_if_missing("medicines", "med_name", "TEXT")
 add_column_if_missing("medicines", "doses_json", "TEXT")
-
-# Final commit for table creation/setup
-conn.commit()
 
 # --------------------------------------------------
 # HELPERS & AUTH
@@ -489,5 +502,6 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
