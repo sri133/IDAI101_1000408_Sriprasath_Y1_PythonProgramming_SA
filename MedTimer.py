@@ -19,12 +19,20 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# DATABASE INITIALIZATION
+# DATABASE INITIALIZATION (CORRECTED)
 # --------------------------------------------------
-conn = sqlite3.connect("users.db", check_same_thread=False)
+@st.cache_resource
+def get_db_connection():
+    # check_same_thread=False is used, but cache_resource ensures 
+    # we aren't creating a new connection on every script rerun.
+    return sqlite3.connect("users.db", check_same_thread=False)
+
+conn = get_db_connection()
 cur = conn.cursor()
 
+# 1. Create tables if they don't exist
 cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, username TEXT UNIQUE, password_hash TEXT)")
+
 cur.execute('''CREATE TABLE IF NOT EXISTS medicines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT,
@@ -33,17 +41,23 @@ cur.execute('''CREATE TABLE IF NOT EXISTS medicines (
                 days INTEGER,
                 times TEXT,
                 doses_json TEXT)''')
+
 cur.execute("CREATE TABLE IF NOT EXISTS user_settings (username TEXT PRIMARY KEY, language TEXT, bg_color TEXT, font_family TEXT, font_size INTEGER)")
 
+# 2. Helper for database migrations
 def add_column_if_missing(table, column, definition):
     try:
         cur.execute(f"SELECT {column} FROM {table} LIMIT 1")
     except sqlite3.OperationalError:
+        # This error usually means the column doesn't exist
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         conn.commit()
 
+# Run the migration checks
 add_column_if_missing("medicines", "med_name", "TEXT")
 add_column_if_missing("medicines", "doses_json", "TEXT")
+
+# Final commit for table creation/setup
 conn.commit()
 
 # --------------------------------------------------
@@ -475,4 +489,5 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
