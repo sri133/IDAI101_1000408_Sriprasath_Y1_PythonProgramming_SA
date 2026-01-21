@@ -435,22 +435,88 @@ if st.session_state.page == "Today's Checklist":
     st.progress(score)
     st.write(f"{score}%")
 
+   # --------------------------------------------------
+    # PDF GENERATION (ENHANCED WITH COLORED STATUS)
+    # --------------------------------------------------
     if st.button(f"📄 {t('btn_pdf')}"):
         styles = getSampleStyleSheet()
-        elements = [Paragraph(f"<b>Report</b>", styles["Title"])]
-        table_data = [["Date", "Day", "Medicine", "Scheduled", "Taken", "Status"]]
+        # Custom style for colored status text inside the table
+        styles.add(styles["Normal"].clone("StatusStyle"))
+        
+        elements = []
+        elements.append(Paragraph(f"<b>{t('title')} - Adherence Report</b>", styles["Title"]))
+        elements.append(Paragraph(f"Patient: {st.session_state.user} | Date: {date.today()}", styles["Normal"]))
+        elements.append(Paragraph("<br/><br/>", styles["Normal"]))
+
+        # Table Header
+        table_data = [["Date", "Medicine", "Scheduled", "Taken At", "Status"]]
+        
+        TOLERANCE = 10  # Minutes window for "on time"
+
         for med in st.session_state.meds:
             for d in med["doses"]:
-                status = "Taken" if d["taken"] else "Not Taken"
-                table_data.append([d["datetime"].strftime("%d-%m-%Y"), d["datetime"].strftime("%A"), med["name"], d["datetime"].strftime("%H:%M"), d["taken_time"].strftime("%H:%M") if d["taken_time"] else "-", status])
-        table = Table(table_data)
-        elements.append(table)
+                sched_dt = d["datetime"]
+                taken_dt = d["taken_time"]
+                
+                # Determine Status and Color
+                if d["taken"] and taken_dt:
+                    diff = (taken_dt - sched_dt).total_seconds() / 60
+                    taken_str = taken_dt.strftime("%H:%M")
+                    
+                    if abs(diff) <= TOLERANCE:
+                        status_text = "Taken on time"
+                        status_color = "green"
+                    else:
+                        status_text = "Taken early/late"
+                        status_color = "orange" # Using orange for better visibility than yellow on white PDF
+                else:
+                    status_text = "Not taken"
+                    status_color = "red"
+                    taken_str = "-"
+
+                # Create a colored Paragraph for the status cell
+                colored_status = Paragraph(
+                    f'<b><font color="{status_color}">{status_text}</font></b>', 
+                    styles["StatusStyle"]
+                )
+
+                table_data.append([
+                    sched_dt.strftime("%d-%m-%Y"),
+                    med["name"],
+                    sched_dt.strftime("%H:%M"),
+                    taken_str,
+                    colored_status
+                ])
+
+        # Create Table Object
+        report_table = Table(table_data, colWidths=[80, 120, 80, 80, 120])
+        
+        # Apply Table Styling
+        report_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.whitesmoke),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        elements.append(report_table)
+
+        # Build PDF
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         doc = SimpleDocTemplate(tmp.name, pagesize=A4)
         doc.build(elements)
-        with open(tmp.name, "rb") as f:
-            st.download_button(t("btn_download_pdf"), f, file_name="report.pdf")
 
+        with open(tmp.name, "rb") as f:
+            st.download_button(
+                label=t("btn_download_pdf"),
+                data=f,
+                file_name=f"MedReport_{st.session_state.user}.pdf",
+                mime="application/pdf"
+            )
 # --------------------------------------------------
 # PAGE: SETTINGS
 # --------------------------------------------------
@@ -502,6 +568,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
