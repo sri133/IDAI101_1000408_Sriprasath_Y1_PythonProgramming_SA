@@ -6,6 +6,99 @@ Asclepius – MedTimer is an interactive **Python-based web application** design
 Built using **Streamlit**, the app transforms medication tracking from a stressful obligation into a calm, reassuring daily companion focused on accessibility, clarity, and social good.
 
 ---
+## APP FLOW IN TEXT:
+📌 Application Flow
+
+App Start / Launch
+
+User opens the MedTimer web application.
+
+Welcome Screen
+
+Displays a friendly greeting:
+“Let’s take care of your health today.”
+
+Add Medicine Screen
+
+User inputs:
+
+Medicine name
+
+Scheduled time
+
+Clicks Add Medicine button.
+
+Data Storage Process
+
+Medicine details are stored in a list/dictionary.
+
+Default status is set to Upcoming.
+
+Daily Medicine Checklist Screen
+
+Displays all medicines scheduled for the current day.
+
+Uses large fonts and clear spacing for readability.
+
+Time Comparison Logic
+
+Current time is compared with the scheduled medicine time.
+
+Status conditions:
+
+⏳ Upcoming → Time not reached (Yellow)
+
+✅ Taken → User marked as taken (Green)
+
+❌ Missed → Time passed and not taken (Red)
+
+User Action: Mark as Taken
+
+User checks a checkbox or clicks a button.
+
+Medicine status updates instantly to Taken.
+
+Weekly Adherence Calculation
+
+Counts:
+
+Total scheduled medicines
+
+Total medicines taken
+
+Calculates adherence percentage.
+
+Adherence Score Display Screen
+
+Shows weekly adherence score.
+
+Includes a progress indicator.
+
+Turtle Graphics Feedback
+
+If adherence meets or exceeds a good threshold:
+
+Displays turtle graphics (smiley face / trophy).
+
+Shows an encouraging message.
+
+Motivational Tips Screen
+
+Displays a health tip or motivational quote.
+
+Loop Flow
+
+Application continues running:
+
+Allows adding new medicines
+
+Updates statuses dynamically.
+
+End of Day / Continue Tomorrow
+
+Day ends naturally.
+
+Data continues for the next day’s tracking.
 
 ## 📘 Project Overview
 
