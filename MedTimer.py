@@ -461,7 +461,7 @@ if st.session_state.page == "Add Medicine":
 
 
 # --------------------------------------------------
-# PAGE: TODAY'S CHECKLIST
+# PAGE: TODAY'S CHECKLIST (FIXED TIME LOGIC)
 # --------------------------------------------------
 if st.session_state.page == "Today's Checklist":
     st.title(t("checklist"))
@@ -475,6 +475,7 @@ if st.session_state.page == "Today's Checklist":
     now = datetime.now()
     to_delete = None
     has_meds_today = False
+    TOLERANCE = 10  # minutes for "Time to Take" window
 
     for mi, med in enumerate(st.session_state.meds):
         for di, dose in enumerate(med["doses"]):
@@ -482,17 +483,21 @@ if st.session_state.page == "Today's Checklist":
                 has_meds_today = True
                 st.markdown(f"### 💊 {med['name']}")
                 st.write(f"⏰ {dose['datetime'].strftime('%H:%M')}")
-                time_diff = (now - dose["datetime"]).total_seconds() / 60
                 
-                if dose["taken"]: 
-                    st.success(t("status_taken")) 
-                elif abs(time_diff) <= 10: 
-                    st.success(f"🌟 {t('status_now')}") 
-                elif time_diff > 10: 
+                # CALCULATE TIME DIFFERENCE
+                time_diff = (now - dose["datetime"]).total_seconds() / 60  # in minutes
+                
+                # DETERMINE STATUS
+                if dose["taken"]:
+                    st.success(t("status_taken"))
+                elif 0 <= time_diff <= TOLERANCE:
+                    st.success(f"🌟 {t('status_now')}")
+                elif time_diff > TOLERANCE:
                     st.error(t("status_missed"))
-                else: 
+                else:  # time_diff < 0
                     st.warning(t("status_upcoming"))
 
+                # ACTION BUTTONS
                 c1, c2, c3 = st.columns(3)
 
                 if c1.button(f"✅ {t('btn_taken')}", key=f"take_{mi}_{di}"):
@@ -533,6 +538,7 @@ if st.session_state.page == "Today's Checklist":
 
                 st.divider()
 
+    # DELETE MEDICINE IF REQUESTED
     if to_delete is not None:
         med_to_remove = st.session_state.meds[to_delete]["name"]
         cur.execute("DELETE FROM medicines WHERE username=? AND med_name=?",
@@ -541,8 +547,10 @@ if st.session_state.page == "Today's Checklist":
         st.session_state.meds.pop(to_delete)
         st.rerun()
 
+    # IF NO MEDICINES TODAY
     if not has_meds_today:
         st.info(t("no_meds_today"))
+
 
     # --------------------------------------------------
     # DAILY ADHERENCE SCORE (SMALL CIRCLE)
@@ -728,6 +736,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
