@@ -3,6 +3,7 @@ import sqlite3
 import hashlib
 import json
 import os
+import io
 import tempfile
 import random
 from datetime import datetime, date, time, timedelta
@@ -541,9 +542,6 @@ if st.session_state.page == "Today's Checklist":
     # --------------------------------------------------
     # ADHERENCE SCORE (SMALL CIRCLE, NEAT)
     # --------------------------------------------------
-    import io
-    import matplotlib.pyplot as plt
-
     total = sum(len(m["doses"]) for m in st.session_state.meds)
     taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
     score = int((taken / total) * 100) if total else 0
@@ -576,55 +574,63 @@ if st.session_state.page == "Today's Checklist":
     st.image(buf, width=180)  # small fixed width
     plt.close(fig)
     # --------------------------------------------------
-    # WEEKLY ADHERENCE SCORE (PLOTLY)
-    # --------------------------------------------------
+# WEEKLY ADHERENCE (LAST 7 DAYS - BAR GRAPH)
+# --------------------------------------------------
 import plotly.graph_objects as go
 
 today = date.today()
-week_start = today - timedelta(days=6)
 
-weekly_total = 0
-weekly_taken = 0
+# Prepare last 7 days
+days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+day_labels = [d.strftime("%a") for d in days]  # Mon, Tue, etc.
 
+daily_total = {d: 0 for d in days}
+daily_taken = {d: 0 for d in days}
+
+# Count doses per day
 for med in st.session_state.meds:
-    for d in med["doses"]:
-        dose_date = d["datetime"].date()
-        if week_start <= dose_date <= today:
-            weekly_total += 1
-            if d["taken"]:
-                weekly_taken += 1
+    for dose in med["doses"]:
+        dose_date = dose["datetime"].date()
+        if dose_date in daily_total:
+            daily_total[dose_date] += 1
+            if dose["taken"]:
+                daily_taken[dose_date] += 1
 
-weekly_score = int((weekly_taken / weekly_total) * 100) if weekly_total else 0
+# Calculate daily adherence %
+daily_scores = []
+for d in days:
+    if daily_total[d] == 0:
+        daily_scores.append(0)
+    else:
+        daily_scores.append(int((daily_taken[d] / daily_total[d]) * 100))
 
-st.subheader("📅 Weekly Adherence Score")
+# Plotly Bar Chart
+st.subheader("📊 Weekly Adherence (Last 7 Days)")
 
-fig = go.Figure(
-    data=[
-        go.Pie(
-            values=[weekly_score, 100 - weekly_score],
-            hole=0.65,
-            marker=dict(colors=["#2ECC71", "#ECECEC"]),
-            textinfo="none"
-        )
-    ]
+fig = go.Figure()
+
+fig.add_trace(
+    go.Bar(
+        x=day_labels,
+        y=daily_scores,
+        text=[f"{s}%" for s in daily_scores],
+        textposition="outside",
+        marker_color="#2ECC71"
+    )
 )
 
 fig.update_layout(
-    annotations=[
-        dict(
-            text=f"<b>{weekly_score}%</b><br>Last 7 days",
-            x=0.5,
-            y=0.5,
-            font_size=16,
-            showarrow=False
-        )
-    ],
-    showlegend=False,
-    margin=dict(t=10, b=10, l=10, r=10),
-    height=220
+    yaxis=dict(range=[0, 100], title="Adherence %"),
+    xaxis=dict(title="Day"),
+    height=300,
+    margin=dict(t=30, b=30, l=30, r=30),
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)"
 )
 
-st.plotly_chart(fig, use_container_width=False)
+st.plotly_chart(fig, use_container_width=True)
+
+   
 
 
     # PDF Generation
@@ -731,6 +737,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
