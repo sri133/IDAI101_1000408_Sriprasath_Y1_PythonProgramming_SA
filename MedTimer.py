@@ -547,7 +547,7 @@ if st.session_state.page == "Today's Checklist":
 
     st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(0.3, 0.3))  # smaller figure
+    fig, ax = plt.subplots(figsize=(0.8, 0.8))  # smaller figure
 
     values = [score, 100 - score]
     colors = ["#4CAF50", "#E0E0E0"]  # green + light grey
@@ -556,7 +556,7 @@ if st.session_state.page == "Today's Checklist":
         values,
         startangle=90,
         colors=colors,
-        wedgeprops=dict(width=0.35)
+        wedgeprops=dict(width=0.03)
     )
 
     ax.text(
@@ -564,7 +564,7 @@ if st.session_state.page == "Today's Checklist":
         f"{score}%",
         ha="center",
         va="center",
-        fontsize=16,
+        fontsize=4,
         fontweight="bold"
     )
 
@@ -677,6 +677,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
