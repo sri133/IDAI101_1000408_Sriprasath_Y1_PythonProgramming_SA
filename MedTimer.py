@@ -575,6 +575,57 @@ if st.session_state.page == "Today's Checklist":
     buf.seek(0)
     st.image(buf, width=180)  # small fixed width
     plt.close(fig)
+    # --------------------------------------------------
+    # WEEKLY ADHERENCE SCORE (PLOTLY)
+    # --------------------------------------------------
+import plotly.graph_objects as go
+
+today = date.today()
+week_start = today - timedelta(days=6)
+
+weekly_total = 0
+weekly_taken = 0
+
+for med in st.session_state.meds:
+    for d in med["doses"]:
+        dose_date = d["datetime"].date()
+        if week_start <= dose_date <= today:
+            weekly_total += 1
+            if d["taken"]:
+                weekly_taken += 1
+
+weekly_score = int((weekly_taken / weekly_total) * 100) if weekly_total else 0
+
+st.subheader("📅 Weekly Adherence Score")
+
+fig = go.Figure(
+    data=[
+        go.Pie(
+            values=[weekly_score, 100 - weekly_score],
+            hole=0.65,
+            marker=dict(colors=["#2ECC71", "#ECECEC"]),
+            textinfo="none"
+        )
+    ]
+)
+
+fig.update_layout(
+    annotations=[
+        dict(
+            text=f"<b>{weekly_score}%</b><br>Last 7 days",
+            x=0.5,
+            y=0.5,
+            font_size=16,
+            showarrow=False
+        )
+    ],
+    showlegend=False,
+    margin=dict(t=10, b=10, l=10, r=10),
+    height=220
+)
+
+st.plotly_chart(fig, use_container_width=False)
+
 
     # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
@@ -680,6 +731,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
