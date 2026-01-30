@@ -100,6 +100,8 @@ Day ends naturally.
 
 Data continues for the next day’s tracking.
 
+## Drive Link to view app flow image and app Screenshots: https://drive.google.com/drive/folders/1Tt6dp-HQPeD_E8dZAZjkc7vZGEQ003Vu?usp=drive_link
+
 ## 📘 Project Overview
 
 Medication adherence is a major challenge for elderly users and patients with chronic illnesses. Missed or delayed doses can lead to anxiety, health risks, and reduced independence.
