@@ -563,7 +563,7 @@ if st.session_state.page == "Today's Checklist":
     )
 
     # Center text
-    ax.text(0, 0, f"{score}%", ha="center", va="center", fontsize=12, fontweight="bold")
+    ax.text(0, 0, f"{score}%", ha="center", va="center", fontsize=15, fontweight="bold")
 
     ax.set(aspect="equal")
     ax.axis("off")
@@ -680,6 +680,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
