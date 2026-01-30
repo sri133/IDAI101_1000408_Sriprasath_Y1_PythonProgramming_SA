@@ -543,7 +543,7 @@ if st.session_state.page == "Today's Checklist":
     if not has_meds_today: 
         st.info(t("no_meds_today"))
 
-    # --------------------------------------------------
+# --------------------------------------------------
 # ADHERENCE SCORE (CIRCULAR GRAPH, SMALLER)
 # --------------------------------------------------
 total = sum(len(m["doses"]) for m in st.session_state.meds)
@@ -683,6 +683,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
