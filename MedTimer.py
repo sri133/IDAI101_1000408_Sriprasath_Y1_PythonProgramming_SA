@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import io
+import plotly.graph_objects as go
 import tempfile
 import random
 from datetime import datetime, date, time, timedelta
@@ -493,6 +494,7 @@ if st.session_state.page == "Today's Checklist":
                     st.warning(t("status_upcoming"))
 
                 c1, c2, c3 = st.columns(3)
+
                 if c1.button(f"✅ {t('btn_taken')}", key=f"take_{mi}_{di}"):
                     dose["taken"] = True
                     dose["taken_time"] = datetime.now()
@@ -514,8 +516,10 @@ if st.session_state.page == "Today's Checklist":
                         "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d.get("taken_time") else None
                     } for d in med["doses"]])
                     
-                    cur.execute("UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", 
-                               (updated_json, st.session_state.user, med["name"]))
+                    cur.execute(
+                        "UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?",
+                        (updated_json, st.session_state.user, med["name"])
+                    )
                     conn.commit()
                     st.rerun()
 
@@ -531,16 +535,17 @@ if st.session_state.page == "Today's Checklist":
 
     if to_delete is not None:
         med_to_remove = st.session_state.meds[to_delete]["name"]
-        cur.execute("DELETE FROM medicines WHERE username=? AND med_name=?", (st.session_state.user, med_to_remove))
+        cur.execute("DELETE FROM medicines WHERE username=? AND med_name=?",
+                    (st.session_state.user, med_to_remove))
         conn.commit()
         st.session_state.meds.pop(to_delete)
         st.rerun()
 
-    if not has_meds_today: 
+    if not has_meds_today:
         st.info(t("no_meds_today"))
 
     # --------------------------------------------------
-    # ADHERENCE SCORE (SMALL CIRCLE, NEAT)
+    # DAILY ADHERENCE SCORE (SMALL CIRCLE)
     # --------------------------------------------------
     total = sum(len(m["doses"]) for m in st.session_state.meds)
     taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
@@ -548,89 +553,75 @@ if st.session_state.page == "Today's Checklist":
 
     st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(4, 4))  # small figure
-
+    fig, ax = plt.subplots(figsize=(4, 4))
     values = [score, 100 - score]
-    colors = ["#4CAF50", "#E0E0E0"]  # green and grey
+    colors = ["#4CAF50", "#E0E0E0"]
 
     ax.pie(
         values,
         startangle=90,
         colors=colors,
-        wedgeprops=dict(width=0.7, edgecolor='white')  # thinner ring
+        wedgeprops=dict(width=0.7, edgecolor="white")
     )
 
-    # Center text
-    ax.text(0, 0, f"{score}%", ha="center", va="center", fontsize=15, fontweight="bold")
-
-    ax.set(aspect="equal")
+    ax.text(0, 0, f"{score}%", ha="center", va="center",
+            fontsize=15, fontweight="bold")
     ax.axis("off")
-    plt.tight_layout()
+    ax.set(aspect="equal")
 
-    # Render figure to an image buffer
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', transparent=True)
+    fig.savefig(buf, format="png", transparent=True)
     buf.seek(0)
-    st.image(buf, width=180)  # small fixed width
+    st.image(buf, width=180)
     plt.close(fig)
+
     # --------------------------------------------------
-# WEEKLY ADHERENCE (LAST 7 DAYS - BAR GRAPH)
-# --------------------------------------------------
-import plotly.graph_objects as go
+    # WEEKLY ADHERENCE (LAST 7 DAYS - BAR GRAPH)
+    # --------------------------------------------------
+    st.subheader("📊 Weekly Adherence (Last 7 Days)")
 
-today = date.today()
+    today = date.today()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    labels = [d.strftime("%a") for d in days]
 
-# Prepare last 7 days
-days = [today - timedelta(days=i) for i in range(6, -1, -1)]
-day_labels = [d.strftime("%a") for d in days]  # Mon, Tue, etc.
+    daily_total = {d: 0 for d in days}
+    daily_taken = {d: 0 for d in days}
 
-daily_total = {d: 0 for d in days}
-daily_taken = {d: 0 for d in days}
+    for med in st.session_state.meds:
+        for dose in med["doses"]:
+            d_date = dose["datetime"].date()
+            if d_date in daily_total:
+                daily_total[d_date] += 1
+                if dose["taken"]:
+                    daily_taken[d_date] += 1
 
-# Count doses per day
-for med in st.session_state.meds:
-    for dose in med["doses"]:
-        dose_date = dose["datetime"].date()
-        if dose_date in daily_total:
-            daily_total[dose_date] += 1
-            if dose["taken"]:
-                daily_taken[dose_date] += 1
+    weekly_scores = [
+        int((daily_taken[d] / daily_total[d]) * 100) if daily_total[d] else 0
+        for d in days
+    ]
 
-# Calculate daily adherence %
-daily_scores = []
-for d in days:
-    if daily_total[d] == 0:
-        daily_scores.append(0)
-    else:
-        daily_scores.append(int((daily_taken[d] / daily_total[d]) * 100))
-
-# Plotly Bar Chart
-st.subheader("📊 Weekly Adherence (Last 7 Days)")
-
-fig = go.Figure()
-
-fig.add_trace(
-    go.Bar(
-        x=day_labels,
-        y=daily_scores,
-        text=[f"{s}%" for s in daily_scores],
-        textposition="outside",
-        marker_color="#2ECC71"
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=labels,
+                y=weekly_scores,
+                text=[f"{v}%" for v in weekly_scores],
+                textposition="outside",
+                marker_color="#42A5F5"
+            )
+        ]
     )
-)
 
-fig.update_layout(
-    yaxis=dict(range=[0, 100], title="Adherence %"),
-    xaxis=dict(title="Day"),
-    height=300,
-    margin=dict(t=30, b=30, l=30, r=30),
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)"
-)
+    fig.update_layout(
+        height=280,
+        yaxis=dict(range=[0, 100], title="Adherence %"),
+        xaxis=dict(title="Day"),
+        margin=dict(l=30, r=30, t=30, b=30),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
 
-st.plotly_chart(fig, use_container_width=True)
-
-   
+    st.plotly_chart(fig, use_container_width=True)
 
 
     # PDF Generation
@@ -737,6 +728,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
