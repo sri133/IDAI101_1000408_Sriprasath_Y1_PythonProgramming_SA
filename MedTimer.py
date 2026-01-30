@@ -327,45 +327,129 @@ st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 # --------------------------------------------------
 if st.session_state.page == "Add Medicine":
     st.title("➕ Add / ✏️ Edit Medicine")
-    edit_mode = st.session_state.edit_med is not None
+
+    # ✅ SAFE edit mode check (FIXES IndexError)
+    edit_mode = (
+        st.session_state.edit_med is not None
+        and isinstance(st.session_state.edit_med, int)
+        and 0 <= st.session_state.edit_med < len(st.session_state.meds)
+    )
+
     med = st.session_state.meds[st.session_state.edit_med] if edit_mode else None
-    times_per_day = st.number_input("Times per Day", 1, 5, value=med["times_per_day"] if edit_mode else 1)
+
+    times_per_day = st.number_input(
+        "Times per Day",
+        1,
+        5,
+        value=med["times_per_day"] if edit_mode else 1
+    )
 
     with st.form("medicine_form"):
-        name = st.text_input("Medicine Name", value=med["name"] if edit_mode else "")
-        start_date = st.date_input("Start Date", value=med["start"] if edit_mode else date.today())
-        days = st.number_input("Number of Days", 1, 365, value=med["days"] if edit_mode else 5)
+        name = st.text_input(
+            "Medicine Name",
+            value=med["name"] if edit_mode else ""
+        )
+
+        start_date = st.date_input(
+            "Start Date",
+            value=med["start"] if edit_mode else date.today()
+        )
+
+        days = st.number_input(
+            "Number of Days",
+            1,
+            365,
+            value=med["days"] if edit_mode else 5
+        )
+
         times = []
         for i in range(times_per_day):
-            default = med["times"][i] if edit_mode and i < len(med["times"]) else time(9, 0)
-            times.append(st.time_input(f"Time {i+1}", default, step=60))
+            default_time = (
+                med["times"][i]
+                if edit_mode and i < len(med["times"])
+                else time(9, 0)
+            )
+            times.append(
+                st.time_input(f"Time {i+1}", default_time, step=60)
+            )
 
         if st.form_submit_button("Save Medicine"):
             doses = []
             for d in range(days):
                 for t_val in times:
                     doses.append({
-                        "datetime": datetime.combine(start_date + timedelta(days=d), t_val),
-                        "taken": False, "taken_time": None
+                        "datetime": datetime.combine(
+                            start_date + timedelta(days=d),
+                            t_val
+                        ),
+                        "taken": False,
+                        "taken_time": None
                     })
-            data = {"name": name, "start": start_date, "days": days, "times_per_day": times_per_day, "times": times, "doses": doses}
-            
-            doses_json = json.dumps([{
-                "datetime": d["datetime"].strftime("%Y-%m-%d %H:%M:%S"),
-                "taken": d["taken"],
-                "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d["taken_time"] else None
-            } for d in doses])
-            times_str = json.dumps([t_val.strftime("%H:%M") for t_val in times])
+
+            data = {
+                "name": name,
+                "start": start_date,
+                "days": days,
+                "times_per_day": times_per_day,
+                "times": times,
+                "doses": doses
+            }
+
+            doses_json = json.dumps([
+                {
+                    "datetime": d["datetime"].strftime("%Y-%m-%d %H:%M:%S"),
+                    "taken": d["taken"],
+                    "taken_time": (
+                        d["taken_time"].strftime("%Y-%m-%d %H:%M:%S")
+                        if d["taken_time"] else None
+                    )
+                }
+                for d in doses
+            ])
+
+            times_str = json.dumps(
+                [t_val.strftime("%H:%M") for t_val in times]
+            )
 
             if edit_mode:
-                cur.execute("UPDATE medicines SET med_name=?, start_date=?, days=?, times=?, doses_json=? WHERE username=? AND med_name=?", 
-                            (name, str(start_date), days, times_str, doses_json, st.session_state.user, med["name"]))
+                cur.execute(
+                    """
+                    UPDATE medicines
+                    SET med_name=?, start_date=?, days=?, times=?, doses_json=?
+                    WHERE username=? AND med_name=?
+                    """,
+                    (
+                        name,
+                        str(start_date),
+                        days,
+                        times_str,
+                        doses_json,
+                        st.session_state.user,
+                        med["name"]
+                    )
+                )
+
                 st.session_state.meds[st.session_state.edit_med] = data
                 st.session_state.edit_med = None
             else:
-                cur.execute("INSERT INTO medicines (username, med_name, start_date, days, times, doses_json) VALUES (?, ?, ?, ?, ?, ?)", 
-                            (st.session_state.user, name, str(start_date), days, times_str, doses_json))
+                cur.execute(
+                    """
+                    INSERT INTO medicines
+                    (username, med_name, start_date, days, times, doses_json)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        st.session_state.user,
+                        name,
+                        str(start_date),
+                        days,
+                        times_str,
+                        doses_json
+                    )
+                )
+
                 st.session_state.meds.append(data)
+
             conn.commit()
             st.session_state.page = "Today's Checklist"
             st.rerun()
@@ -562,3 +646,4 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
