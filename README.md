@@ -260,3 +260,42 @@ Live App: https://idai1011000408sriprasathy1pythonprogrammingsa-5pfhgqsapprecku9
 ├── users.db
 ├── requirements.txt
 ⭐ Asclepius – MedTimer is built with empathy, simplicity, and real-world healthcare impact at its core.
+
+## 📌 App Summary
+
+| Assessment Criteria | Status |
+|---------------------|--------|
+| Understanding user needs & planning | ✅ |
+| Python logic using lists, dictionaries & `datetime` | ✅ |
+| Interactive Streamlit interface | ✅ |
+| Color-coded medication checklist | ✅ |
+| Adherence calculation & analytics | ✅ |
+| Turtle graphics (creative feature) | ✅ |
+| Testing & usability checks | ✅ |
+| GitHub repository & documentation | ✅ |
+| Live Streamlit deployment | ✅ |
+
+---
+
+## 🚀 Conclusion
+
+**MedTimer** is a complete, user-centric medicine tracking application designed with **empathy, accessibility, and simplicity** at its core.
+
+The project successfully fulfills **all compulsory requirements** of the Summative Assessment while going beyond the baseline through creative, motivational, and usability-focused enhancements.
+
+This work demonstrates:
+
+- Strong Python fundamentals  
+- Effective and structured use of Streamlit  
+- Real-world problem solving skills  
+- Thoughtful UI/UX design aimed at social good  
+
+MedTimer highlights how technology can be applied responsibly to improve everyday healthcare experiences.
+
+---
+Credits: 
+1. Name:Sri Prasath. P
+2. Grade: IBCP Year1
+3. Course: Python Programming
+4. Mentor: Syed Ali Beema.S
+
