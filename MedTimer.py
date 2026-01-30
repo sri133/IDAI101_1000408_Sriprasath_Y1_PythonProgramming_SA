@@ -328,14 +328,16 @@ st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 if st.session_state.page == "Add Medicine":
     st.title("➕ Add / ✏️ Edit Medicine")
 
-    # ✅ SAFE edit mode check (FIXES IndexError)
+    # ✅ SAFE access to session_state (FIXES KeyError + IndexError)
+    edit_index = st.session_state.get("edit_med", None)
+    meds_list = st.session_state.get("meds", [])
+
     edit_mode = (
-        st.session_state.edit_med is not None
-        and isinstance(st.session_state.edit_med, int)
-        and 0 <= st.session_state.edit_med < len(st.session_state.meds)
+        isinstance(edit_index, int)
+        and 0 <= edit_index < len(meds_list)
     )
 
-    med = st.session_state.meds[st.session_state.edit_med] if edit_mode else None
+    med = meds_list[edit_index] if edit_mode else None
 
     times_per_day = st.number_input(
         "Times per Day",
@@ -429,7 +431,7 @@ if st.session_state.page == "Add Medicine":
                     )
                 )
 
-                st.session_state.meds[st.session_state.edit_med] = data
+                meds_list[edit_index] = data
                 st.session_state.edit_med = None
             else:
                 cur.execute(
@@ -448,11 +450,12 @@ if st.session_state.page == "Add Medicine":
                     )
                 )
 
-                st.session_state.meds.append(data)
+                meds_list.append(data)
 
             conn.commit()
             st.session_state.page = "Today's Checklist"
             st.rerun()
+
 
 # --------------------------------------------------
 # PAGE: TODAY'S CHECKLIST
@@ -646,4 +649,5 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
