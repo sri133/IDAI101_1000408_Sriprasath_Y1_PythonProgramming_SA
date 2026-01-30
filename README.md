@@ -345,7 +345,7 @@ Free public access
 
 🔗 Live Links
 
-Live App: https://idai1011000408sriprasathy1pythonprogrammingsa-5pfhgqsapprecku9.streamlit.app/
+Live App: https://1000408sriprasathy1pythonprogrammingsa-dhqr3wkoeobnxf5c9dvens.streamlit.app/
 
 📁 Repository Structure
 /
