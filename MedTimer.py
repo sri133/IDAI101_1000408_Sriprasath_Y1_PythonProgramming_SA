@@ -346,12 +346,15 @@ st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 if st.session_state.page == "Add Medicine":
     st.title("➕ Add / ✏️ Edit Medicine")
     edit_mode = st.session_state.edit_med is not None
-    # Check if edit_mode is active AND the index actually exists in the list
+    # 1. Define edit_mode first
+edit_mode = st.session_state.edit_med is not None
+
+# 2. Then perform the safety check
 if edit_mode and st.session_state.edit_med < len(st.session_state.meds):
     med = st.session_state.meds[st.session_state.edit_med]
 else:
     med = None
-    edit_mode = False # Reset if index is invalid to prevent crash
+    edit_mode = False  # Reset if index is invalid
     times_per_day = st.number_input("Times per Day", 1, 5, value=med["times_per_day"] if edit_mode else 1)
 
     with st.form("medicine_form"):
@@ -640,6 +643,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
