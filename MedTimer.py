@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import tempfile
+import random
 from datetime import datetime, date, time, timedelta
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
@@ -20,25 +21,19 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# DATABASE INITIALIZATION (AUTO-FILE CREATION)
+# DATABASE INITIALIZATION
 # --------------------------------------------------
 @st.cache_resource
 def get_db_connection():
-    # This force-creates the file 'users.db' in your current folder if it doesn't exist
     db_path = os.path.join(os.getcwd(), "users.db")
-    
-    # timeout=20 prevents "Database is locked" errors
     conn = sqlite3.connect(db_path, check_same_thread=False, timeout=20)
     return conn
 
-# Connect and create the cursor
 conn = get_db_connection()
 cur = conn.cursor()
 
-# Create Tables (This is where the file 'users.db' actually gets populated)
 try:
     cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, username TEXT UNIQUE, password_hash TEXT)")
-    
     cur.execute('''CREATE TABLE IF NOT EXISTS medicines (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT,
@@ -47,10 +42,7 @@ try:
                     days INTEGER,
                     times TEXT,
                     doses_json TEXT)''')
-    
     cur.execute("CREATE TABLE IF NOT EXISTS user_settings (username TEXT PRIMARY KEY, language TEXT, bg_color TEXT, font_family TEXT, font_size INTEGER)")
-    
-    # This commit is what physically writes the tables to the 'users.db' file
     conn.commit()
 except sqlite3.OperationalError as e:
     st.error(f"Database Error: {e}")
@@ -69,12 +61,11 @@ def add_column_if_missing(table, column, definition):
         except:
             pass
 
-# Ensure new columns exist
 add_column_if_missing("medicines", "med_name", "TEXT")
 add_column_if_missing("medicines", "doses_json", "TEXT")
 
 # --------------------------------------------------
-# HELPERS & AUTH
+# HELPERS & AUTH FUNCTIONS
 # --------------------------------------------------
 def hash_pw(pw):
     return hashlib.sha256(pw.encode()).hexdigest()
@@ -139,7 +130,7 @@ def update_credentials(old_u, old_p, new_u, new_p):
     return False
 
 # --------------------------------------------------
-# SESSION STATE & TRANSLATION
+# SESSION STATE & TRANSLATIONS
 # --------------------------------------------------
 defaults = {
     "logged": False,
@@ -281,30 +272,21 @@ st.markdown(
 
 def check_medicine_reminders():
     now = datetime.now()
-    # Initialize a tracking dictionary if it doesn't exist
     if "notifications_done" not in st.session_state:
         st.session_state.notifications_done = set()
 
     for med in st.session_state.meds:
         for dose in med["doses"]:
-            # Check if dose is for today and hasn't been taken
             if dose["datetime"].date() == now.date() and not dose["taken"]:
-                
-                # Calculate time difference in minutes
-                # Positive means the time has passed; 0 means it's exactly now
                 time_diff = (now - dose["datetime"]).total_seconds() / 60
-                
-                # Create a unique key for this specific dose
                 notification_key = f"{med['name']}_{dose['datetime'].strftime('%H:%M')}"
-
-                # Trigger if we are within 1 minute of the scheduled time
                 if 0 <= time_diff < 1: 
                     if notification_key not in st.session_state.notifications_done:
                         st.toast(f"🔔 **Time for your medicine:** {med['name']}!", icon="💊")
                         st.session_state.notifications_done.add(notification_key)
 
 # --------------------------------------------------
-# AUTH UI
+# AUTHENTICATION UI
 # --------------------------------------------------
 if not st.session_state.logged:
     st.title("💊 Asclepius – MedTimer")
@@ -336,7 +318,7 @@ if not st.session_state.logged:
     st.stop()
 
 # --------------------------------------------------
-# MAIN APP HEADER
+# APP HEADER
 # --------------------------------------------------
 st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 
@@ -346,15 +328,7 @@ st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 if st.session_state.page == "Add Medicine":
     st.title("➕ Add / ✏️ Edit Medicine")
     edit_mode = st.session_state.edit_med is not None
-    # 1. Define edit_mode first
-edit_mode = st.session_state.edit_med is not None
-
-# 2. Then perform the safety check
-if edit_mode and st.session_state.edit_med < len(st.session_state.meds):
-    med = st.session_state.meds[st.session_state.edit_med]
-else:
-    med = None
-    edit_mode = False  # Reset if index is invalid
+    med = st.session_state.meds[st.session_state.edit_med] if edit_mode else None
     times_per_day = st.number_input("Times per Day", 1, 5, value=med["times_per_day"] if edit_mode else 1)
 
     with st.form("medicine_form"):
@@ -381,7 +355,7 @@ else:
                 "taken": d["taken"],
                 "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d["taken_time"] else None
             } for d in doses])
-            times_str = json.dumps([t_val.strftime("%H:%M") for t in times])
+            times_str = json.dumps([t_val.strftime("%H:%M") for t_val in times])
 
             if edit_mode:
                 cur.execute("UPDATE medicines SET med_name=?, start_date=?, days=?, times=?, doses_json=? WHERE username=? AND med_name=?", 
@@ -401,19 +375,14 @@ else:
 # --------------------------------------------------
 if st.session_state.page == "Today's Checklist":
     st.title(t("checklist"))
-    
-    # Check for notifications immediately when page loads/refreshes
     check_medicine_reminders()
     
-    # Ensure the quote exists in session state so it doesn't error out
     if "motivation_quote" not in st.session_state:
         st.session_state.motivation_quote = "Every pill taken on time is a victory for your health! 🌟"
     
-    # --- MOTIVATION BOX ---
     st.info(f"✨ **Daily Motivation:** {st.session_state.motivation_quote}")
     
     now = datetime.now()
-    check_medicine_reminders()
     to_delete = None
     has_meds_today = False
 
@@ -435,15 +404,10 @@ if st.session_state.page == "Today's Checklist":
                     st.warning(t("status_upcoming"))
 
                 c1, c2, c3 = st.columns(3)
-                
-                # --- COLUMN 1: TAKEN BUTTON (FIXED INDENTATION) ---
                 if c1.button(f"✅ {t('btn_taken')}", key=f"take_{mi}_{di}"):
-                    # 1. Update the dose state locally
                     dose["taken"] = True
                     dose["taken_time"] = datetime.now()
                     
-                    # 2. Pick a random motivation quote
-                    import random
                     MOTIVATION_QUOTES = [
                         "Excellent job! Your health is your wealth. 💪",
                         "Consistency is key! You're doing great. ✨",
@@ -455,34 +419,27 @@ if st.session_state.page == "Today's Checklist":
                     ]
                     st.session_state.motivation_quote = random.choice(MOTIVATION_QUOTES)
                     
-                    # 3. Serialize all doses to save progress to Database
                     updated_json = json.dumps([{
                         "datetime": d["datetime"].strftime("%Y-%m-%d %H:%M:%S"),
                         "taken": d["taken"],
                         "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d.get("taken_time") else None
                     } for d in med["doses"]])
                     
-                    # 4. Database Update
                     cur.execute("UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", 
                                (updated_json, st.session_state.user, med["name"]))
                     conn.commit()
-                    
-                    # 5. Refresh
                     st.rerun()
 
-                # --- COLUMN 2: EDIT BUTTON ---
                 if c2.button(f"✏️ {t('btn_edit')}", key=f"edit_{mi}_{di}"):
                     st.session_state.edit_med = mi
                     st.session_state.page = "Add Medicine"
                     st.rerun()
 
-                # --- COLUMN 3: DELETE BUTTON ---
                 if c3.button(f"🗑 {t('btn_del')}", key=f"del_{mi}_{di}"):
                     to_delete = mi
 
                 st.divider()
 
-    # Handling deletion outside the loop to avoid index errors
     if to_delete is not None:
         med_to_remove = st.session_state.meds[to_delete]["name"]
         cur.execute("DELETE FROM medicines WHERE username=? AND med_name=?", (st.session_state.user, med_to_remove))
@@ -493,7 +450,7 @@ if st.session_state.page == "Today's Checklist":
     if not has_meds_today: 
         st.info(t("no_meds_today"))
 
-    # Adherence Score Calculation
+    # Adherence Score
     total = sum(len(m["doses"]) for m in st.session_state.meds)
     taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
     score = int((taken / total) * 100) if total else 0
@@ -501,97 +458,55 @@ if st.session_state.page == "Today's Checklist":
     st.progress(score)
     st.write(f"{score}%")
 
-  # --------------------------------------------------
-    # PDF GENERATION (WITH TABLES AND COLOR CODING)
-    # --------------------------------------------------
+    # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
         styles = getSampleStyleSheet()
-        # Custom style for the colored status text
         status_style = styles["Normal"].clone("StatusStyle")
-        status_style.alignment = 1  # Center alignment
+        status_style.alignment = 1 
         
         elements = []
-
-        # Title and Header Info
-        elements.append(Paragraph(f"<b>{t('title')} - Adherence Report</b>", styles["Title"]))
+        elements.append(Paragraph(f"<b>{t('pdf_report_title')}</b>", styles["Title"]))
         elements.append(Paragraph(f"<b>Patient:</b> {st.session_state.user} | <b>Age:</b> {st.session_state.age}", styles["Normal"]))
         elements.append(Paragraph(f"<b>Generated on:</b> {date.today().strftime('%d-%m-%Y')}", styles["Normal"]))
         elements.append(Paragraph("<br/><br/>", styles["Normal"]))
 
-        # Table Header Row
-        # Columns: Date, Day, Medicine, Scheduled, Taken At, Status
-        table_data = [["Date", "Day", "Medicine", "Scheduled", "Taken At", "Status"]]
-        
-        TOLERANCE = 15  # 15-minute window for "on time"
+        table_data = [[t("col_date"), t("col_day"), t("col_med"), t("col_sched"), t("col_taken"), t("col_status")]]
+        TOLERANCE = 15
 
         for med in st.session_state.meds:
             for d in med["doses"]:
                 sched_dt = d["datetime"]
                 taken_dt = d["taken_time"]
                 
-                # Logic for Color and Status Text
                 if d["taken"] and taken_dt:
                     diff = (taken_dt - sched_dt).total_seconds() / 60
                     taken_str = taken_dt.strftime("%H:%M")
-                    
                     if abs(diff) <= TOLERANCE:
-                        status_text = "Taken on time"
-                        status_color = "green"
+                        status_text, status_color = "Taken on time", "green"
                     else:
-                        status_text = "Taken early/late"
-                        status_color = "#CCCC00"  # Darker Yellow/Gold for visibility
+                        status_text, status_color = "Taken early/late", "#CCCC00"
                 else:
-                    status_text = "Not taken"
-                    status_color = "red"
-                    taken_str = "-"
+                    status_text, status_color, taken_str = "Not taken", "red", "-"
 
-                # Create a colored cell for the status
-                colored_status = Paragraph(
-                    f'<b><font color="{status_color}">{status_text}</font></b>', 
-                    status_style
-                )
+                colored_status = Paragraph(f'<b><font color="{status_color}">{status_text}</font></b>', status_style)
+                table_data.append([sched_dt.strftime("%d-%m-%Y"), sched_dt.strftime("%A"), med["name"], sched_dt.strftime("%H:%M"), taken_str, colored_status])
 
-                table_data.append([
-                    sched_dt.strftime("%d-%m-%Y"),
-                    sched_dt.strftime("%A"),
-                    med["name"],
-                    sched_dt.strftime("%H:%M"),
-                    taken_str,
-                    colored_status
-                ])
-
-        # Define Table and Widths
-        # Total A4 width is ~540 points
         report_table = Table(table_data, colWidths=[75, 85, 90, 70, 70, 120])
-        
-        # Apply Professional Table Styling (Grid, Background, Alignment)
         report_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),  # Header background
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),       # THIS CREATES THE TABLES/COLUMNS
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('TOPPADDING', (0, 0), (-1, 0), 10),
         ]))
-
         elements.append(report_table)
 
-        # Build and Save PDF
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         doc = SimpleDocTemplate(tmp.name, pagesize=A4)
         doc.build(elements)
 
         with open(tmp.name, "rb") as f:
-            st.download_button(
-                label=t("btn_download_pdf"),
-                data=f,
-                file_name=f"Medical_Report_{st.session_state.user}.pdf",
-                mime="application/pdf"
-            )
+            st.download_button(label=t("btn_download_pdf"), data=f, file_name=f"Medical_Report_{st.session_state.user}.pdf", mime="application/pdf")
+
 # --------------------------------------------------
 # PAGE: SETTINGS
 # --------------------------------------------------
@@ -629,8 +544,12 @@ if st.session_state.page == "Settings":
         new_p = st.text_input("New Password", type="password")
         if st.form_submit_button("Update Credentials"):
             res = update_credentials(curr_u, curr_p, new_u, new_p)
-            if res == True: st.success("Updated! Log in again."); st.session_state.logged = False; st.rerun()
-            else: st.error("Error updating credentials")
+            if res == True: 
+                st.success("Updated! Log in again.")
+                st.session_state.logged = False
+                st.rerun()
+            else: 
+                st.error("Error updating credentials")
 
 # --------------------------------------------------
 # NAVIGATION FOOTER
@@ -643,13 +562,3 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-
