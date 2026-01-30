@@ -550,7 +550,7 @@ if st.session_state.page == "Today's Checklist":
 
     st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(2, 2))  # small figure
+    fig, ax = plt.subplots(figsize=(4, 4))  # small figure
 
     values = [score, 100 - score]
     colors = ["#4CAF50", "#E0E0E0"]  # green and grey
@@ -559,7 +559,7 @@ if st.session_state.page == "Today's Checklist":
         values,
         startangle=90,
         colors=colors,
-        wedgeprops=dict(width=0.3, edgecolor='white')  # thinner ring
+        wedgeprops=dict(width=0.7, edgecolor='white')  # thinner ring
     )
 
     # Center text
@@ -573,7 +573,7 @@ if st.session_state.page == "Today's Checklist":
     buf = io.BytesIO()
     fig.savefig(buf, format='png', transparent=True)
     buf.seek(0)
-    st.image(buf, width=120)  # small fixed width
+    st.image(buf, width=180)  # small fixed width
     plt.close(fig)
 
     # PDF Generation
@@ -680,6 +680,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
