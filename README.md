@@ -242,7 +242,6 @@ streamlit
 plotly
 matplotlib
 reportlab
-Run Locally
 streamlit run app.py
 Cloud Deployment
 GitHub Repository
@@ -252,9 +251,8 @@ Streamlit Cloud
 Free public access
 
 🔗 Live Links
-GitHub Repository: https://github.com/YourUsername/IDAI102-StudentID-Name
 
-Live App: https://your-app-name.streamlit.app
+Live App: https://idai1011000408sriprasathy1pythonprogrammingsa-5pfhgqsapprecku9.streamlit.app/
 
 📁 Repository Structure
 /
