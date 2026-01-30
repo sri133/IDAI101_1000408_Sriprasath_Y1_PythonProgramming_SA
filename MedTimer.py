@@ -511,8 +511,10 @@ if st.session_state.page == "Today's Checklist":
                         "taken_time": d["taken_time"].strftime("%Y-%m-%d %H:%M:%S") if d.get("taken_time") else None
                     } for d in med["doses"]])
                     
-                    cur.execute("UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", 
-                               (updated_json, st.session_state.user, med["name"]))
+                    cur.execute(
+                        "UPDATE medicines SET doses_json=? WHERE username=? AND med_name=?", 
+                        (updated_json, st.session_state.user, med["name"])
+                    )
                     conn.commit()
                     st.rerun()
 
@@ -528,7 +530,10 @@ if st.session_state.page == "Today's Checklist":
 
     if to_delete is not None:
         med_to_remove = st.session_state.meds[to_delete]["name"]
-        cur.execute("DELETE FROM medicines WHERE username=? AND med_name=?", (st.session_state.user, med_to_remove))
+        cur.execute(
+            "DELETE FROM medicines WHERE username=? AND med_name=?", 
+            (st.session_state.user, med_to_remove)
+        )
         conn.commit()
         st.session_state.meds.pop(to_delete)
         st.rerun()
@@ -536,13 +541,40 @@ if st.session_state.page == "Today's Checklist":
     if not has_meds_today: 
         st.info(t("no_meds_today"))
 
-    # Adherence Score
+    # --------------------------------------------------
+    # ADHERENCE SCORE (CIRCULAR GRAPH)
+    # --------------------------------------------------
     total = sum(len(m["doses"]) for m in st.session_state.meds)
     taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
     score = int((taken / total) * 100) if total else 0
+
     st.subheader(t("adherence_score"))
-    st.progress(score)
-    st.write(f"{score}%")
+
+    fig, ax = plt.subplots(figsize=(4, 4))
+
+    values = [score, 100 - score]
+    colors = ["#4CAF50", "#E0E0E0"]  # green + light grey
+
+    ax.pie(
+        values,
+        startangle=90,
+        colors=colors,
+        wedgeprops=dict(width=0.35)
+    )
+
+    ax.text(
+        0, 0,
+        f"{score}%",
+        ha="center",
+        va="center",
+        fontsize=24,
+        fontweight="bold"
+    )
+
+    ax.set(aspect="equal")
+    ax.axis("off")
+
+    st.pyplot(fig)
 
     # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
@@ -648,6 +680,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
