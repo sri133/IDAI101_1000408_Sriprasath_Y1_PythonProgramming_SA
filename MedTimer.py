@@ -544,39 +544,40 @@ if st.session_state.page == "Today's Checklist":
         st.info(t("no_meds_today"))
 
     # --------------------------------------------------
-    # ADHERENCE SCORE (CIRCULAR GRAPH)
-    # --------------------------------------------------
-    total = sum(len(m["doses"]) for m in st.session_state.meds)
-    taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
-    score = int((taken / total) * 100) if total else 0
+# ADHERENCE SCORE (CIRCULAR GRAPH, SMALLER)
+# --------------------------------------------------
+total = sum(len(m["doses"]) for m in st.session_state.meds)
+taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
+score = int((taken / total) * 100) if total else 0
 
-    st.subheader(t("adherence_score"))
+st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(4, 4))
+fig, ax = plt.subplots(figsize=(2.8, 2.8))  # smaller figure
 
-    values = [score, 100 - score]
-    colors = ["#4CAF50", "#E0E0E0"]  # green + light grey
+values = [score, 100 - score]
+colors = ["#4CAF50", "#E0E0E0"]  # green + light grey
 
-    ax.pie(
-        values,
-        startangle=90,
-        colors=colors,
-        wedgeprops=dict(width=0.35)
-    )
+ax.pie(
+    values,
+    startangle=90,
+    colors=colors,
+    wedgeprops=dict(width=0.35)
+)
 
-    ax.text(
-        0, 0,
-        f"{score}%",
-        ha="center",
-        va="center",
-        fontsize=24,
-        fontweight="bold"
-    )
+ax.text(
+    0, 0,
+    f"{score}%",
+    ha="center",
+    va="center",
+    fontsize=16,  # smaller text
+    fontweight="bold"
+)
 
-    ax.set(aspect="equal")
-    ax.axis("off")
+ax.set(aspect="equal")
+ax.axis("off")
 
-    st.pyplot(fig)
+st.pyplot(fig)
+
 
     # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
@@ -682,6 +683,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
