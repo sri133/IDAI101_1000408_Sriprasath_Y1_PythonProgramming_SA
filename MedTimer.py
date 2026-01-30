@@ -328,7 +328,6 @@ st.markdown(f"### 👤 Logged in as **{st.session_state.user}**")
 if st.session_state.page == "Add Medicine":
     st.title("➕ Add / ✏️ Edit Medicine")
 
-    # ✅ SAFE access to session_state (FIXES KeyError + IndexError)
     edit_index = st.session_state.get("edit_med", None)
     meds_list = st.session_state.get("meds", [])
 
@@ -337,38 +336,38 @@ if st.session_state.page == "Add Medicine":
         and 0 <= edit_index < len(meds_list)
     )
 
-    med = meds_list[edit_index] if edit_mode else None
+    med = meds_list[edit_index] if edit_mode else {}
 
     times_per_day = st.number_input(
         "Times per Day",
         1,
         5,
-        value=med["times_per_day"] if edit_mode else 1
+        value=med.get("times_per_day", 1) if edit_mode else 1
     )
 
     with st.form("medicine_form"):
         name = st.text_input(
             "Medicine Name",
-            value=med["name"] if edit_mode else ""
+            value=med.get("name", "")
         )
 
         start_date = st.date_input(
             "Start Date",
-            value=med["start"] if edit_mode else date.today()
+            value=med.get("start", date.today())
         )
 
         days = st.number_input(
             "Number of Days",
             1,
             365,
-            value=med["days"] if edit_mode else 5
+            value=med.get("days", 5)
         )
 
         times = []
         for i in range(times_per_day):
             default_time = (
-                med["times"][i]
-                if edit_mode and i < len(med["times"])
+                med.get("times", [time(9, 0)])[i]
+                if edit_mode and i < len(med.get("times", []))
                 else time(9, 0)
             )
             times.append(
@@ -427,7 +426,7 @@ if st.session_state.page == "Add Medicine":
                         times_str,
                         doses_json,
                         st.session_state.user,
-                        med["name"]
+                        med.get("name")
                     )
                 )
 
@@ -649,5 +648,6 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
