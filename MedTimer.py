@@ -539,24 +539,27 @@ if st.session_state.page == "Today's Checklist":
         st.info(t("no_meds_today"))
 
     # --------------------------------------------------
-    # ADHERENCE SCORE (NEAT SMALL CIRCLE)
+    # ADHERENCE SCORE (SMALL CIRCLE, NEAT)
     # --------------------------------------------------
+    import io
+    import matplotlib.pyplot as plt
+
     total = sum(len(m["doses"]) for m in st.session_state.meds)
     taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
     score = int((taken / total) * 100) if total else 0
 
     st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(1.8, 1.8))  # small figure
+    fig, ax = plt.subplots(figsize=(2, 2))  # small figure
 
     values = [score, 100 - score]
-    colors = ["#4CAF50", "#E0E0E0"]  # green for taken, grey for remaining
+    colors = ["#4CAF50", "#E0E0E0"]  # green and grey
 
     ax.pie(
         values,
         startangle=90,
         colors=colors,
-        wedgeprops=dict(width=0.4, edgecolor='white')  # thinner ring
+        wedgeprops=dict(width=0.3, edgecolor='white')  # thinner ring
     )
 
     # Center text
@@ -566,7 +569,12 @@ if st.session_state.page == "Today's Checklist":
     ax.axis("off")
     plt.tight_layout()
 
-    st.pyplot(fig)
+    # Render figure to an image buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', transparent=True)
+    buf.seek(0)
+    st.image(buf, width=120)  # small fixed width
+    plt.close(fig)
 
     # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
@@ -672,6 +680,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
