@@ -539,39 +539,39 @@ if st.session_state.page == "Today's Checklist":
         st.info(t("no_meds_today"))
 
     # --------------------------------------------------
-    # ADHERENCE SCORE (COMPACT CIRCULAR GRAPH)
-    # --------------------------------------------------
-    total = sum(len(m["doses"]) for m in st.session_state.meds)
-    taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
-    score = int((taken / total) * 100) if total else 0
+# ADHERENCE SCORE (NEAT SMALL CIRCLE)
+# --------------------------------------------------
+total = sum(len(m["doses"]) for m in st.session_state.meds)
+taken = sum(d["taken"] for m in st.session_state.meds for d in m["doses"])
+score = int((taken / total) * 100) if total else 0
 
-    st.subheader(t("adherence_score"))
+st.subheader(t("adherence_score"))
 
-    fig, ax = plt.subplots(figsize=(0.8, 0.8))  # smaller figure
+# Create a very small figure
+fig, ax = plt.subplots(figsize=(1.8, 1.8))  # small figure
 
-    values = [score, 100 - score]
-    colors = ["#4CAF50", "#E0E0E0"]  # green + light grey
+values = [score, 100 - score]
+colors = ["#4CAF50", "#E0E0E0"]  # green for taken, grey for remaining
 
-    ax.pie(
-        values,
-        startangle=90,
-        colors=colors,
-        wedgeprops=dict(width=0.03)
-    )
+ax.pie(
+    values,
+    startangle=90,
+    colors=colors,
+    wedgeprops=dict(width=0.4, edgecolor='white')  # thinner ring
+)
 
-    ax.text(
-        0, 0,
-        f"{score}%",
-        ha="center",
-        va="center",
-        fontsize=4,
-        fontweight="bold"
-    )
+# Center text
+ax.text(0, 0, f"{score}%", ha="center", va="center", fontsize=12, fontweight="bold")
 
-    ax.set(aspect="equal")
-    ax.axis("off")
+ax.set(aspect="equal")
+ax.axis("off")
 
-    st.pyplot(fig)
+# Use tight layout to remove extra white space
+plt.tight_layout()
+
+st.pyplot(fig)
+
+
 
     # PDF Generation
     if st.button(f"📄 {t('btn_pdf')}"):
@@ -677,6 +677,7 @@ if c3.button(t("settings")): st.session_state.page = "Settings"; st.rerun()
 if c4.button(t("logout")): st.session_state.logged = False; st.rerun()
 
 st.markdown("""<script>setTimeout(function(){window.location.reload();}, 60000);</script>""", unsafe_allow_html=True)
+
 
 
 
